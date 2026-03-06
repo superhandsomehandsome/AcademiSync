@@ -4,3 +4,4 @@ requests
 python-dotenv
 python-docx
 feedparser
+sniffio
