@@ -71,3 +71,75 @@ if st.button("🚀 开始生成深度综述"):
     bio = BytesIO()
     doc.save(bio)
     st.download_button("📥 下载 Word 文档", bio.getvalue(), file_name=f"{research_title}.docx")
+    import streamlit as st
+import researcher
+import generator
+from docx import Document
+from io import BytesIO
+
+st.set_page_config(page_title="AcademiSync Pro", layout="wide")
+
+# 侧边栏保持
+with st.sidebar:
+    st.header("⚙️ 写作配置")
+    # 将字数滑块设为高档位
+    target_words = st.select_slider("目标总字数", options=[2000, 5000, 8000], value=5000)
+    uploaded_file = st.file_uploader("上传辅助文献", type=['pdf', 'docx'])
+
+research_title = st.text_input("综述课题：", placeholder="输入您的研究方向...")
+
+if st.button("🚀 开始深度创作"):
+    with st.status("正在构建学术知识图谱...", expanded=True) as status:
+        # 1. 关键词提取
+        analysis = generator.analyze_research_title(research_title)
+        
+        # 2. 深度检索（关键：获取 URL）
+        all_papers = []
+        for kw in analysis['en_keywords'][:3]:
+            res = researcher.fetch_papers(kw, limit=5)
+            all_papers.extend(res)
+        
+        # 3. 构建带超链接的参考文献库
+        unique_papers = {p['title']: p for p in all_papers}.values()
+        context_for_ai = ""
+        ref_list_markdown = "## 参考文献\n\n"
+        
+        for i, p in enumerate(unique_papers, 1):
+            url = p.get('url') or "https://scholar.google.com"
+            title = p['title']
+            year = p.get('year', 'N/A')
+            
+            # 给 AI 的背景资料
+            context_for_ai += f"文献[{i}]: {title}. 摘要: {p.get('abstract', '')}\n\n"
+            # 给用户的可点击列表
+            ref_list_markdown += f"[{i}] [{title}]({url}). {year}.\n\n"
+
+        # 4. 生成超长文本 (分步骤串联)
+        # 这里的关键是：先生成大纲，然后对大纲里的每个点独立生成 1000 字
+        outline = generator.generate_outline(research_title, context_for_ai)
+        
+        full_text = f"# {research_title}\n\n{outline}\n\n"
+        
+        # 5. 循环生成：确保每一章都足够长
+        for dim in analysis['dimensions']:
+            st.write(f"✍️ 正在深度撰写章节：{dim}...")
+            # 这里的 target_words // len(dimensions) 确保总数达标
+            chapter_content = generator.generate_chapter_deep(
+                research_title, outline, dim, context_for_ai, target_words
+            )
+            full_text += f"## {dim}\n\n{chapter_content}\n\n"
+        
+        # 拼接参考文献
+        full_text += "\n---\n" + ref_list_markdown
+        status.update(label="✅ 万字综述生成成功！", state="complete")
+
+    st.markdown(full_text, unsafe_allow_html=True)
+    
+    # Word 导出（保留超链接格式）
+    doc = Document()
+    doc.add_heading(research_title, 0)
+    for line in full_text.split('\n'):
+        if line.strip(): doc.add_paragraph(line)
+    bio = BytesIO()
+    doc.save(bio)
+    st.download_button("📥 下载完整 Word", bio.getvalue(), file_name="Academic_Review.docx")
