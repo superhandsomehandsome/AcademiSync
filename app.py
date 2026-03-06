@@ -43,7 +43,7 @@ if st.button("🚀 开始生成深度综述"):
         
         for i, p in enumerate(unique_papers, 1):
             # 将编号 [i] 强行注入上下文，方便 AI 引用
-            context_data += f"【文献{i}】标题: {p['title']}。摘要: {p.get('abstract','')[:300]}\n\n"
+            context_data += f"【文献{i}】标题: {p['title']}。摘要: {(p.get('abstract') or '')[:300]}\n\n"
             ref_list_html += f"[{i}] {p['title']}. ({p.get('year','N/A')}). [来源: {p.get('source','网络')}]\n\n"
 
         # 第四步：分章撰写（解决字数短的问题）
