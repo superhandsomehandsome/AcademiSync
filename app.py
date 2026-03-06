@@ -13,7 +13,7 @@ with st.sidebar:
         accept_multiple_files=True,
     )
     show_debug = st.checkbox("显示调试信息", value=False)
-  research_title = st.text_input(
+    research_title = st.text_input(
     "请输入综述标题（AI将自动理解并搜寻文献）：",
     placeholder="例如：中药干预糖尿病肾病的效果及分子机制研究进展",
 )
